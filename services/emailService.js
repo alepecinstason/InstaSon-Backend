@@ -80,6 +80,6 @@ async function sendSongEmail(order) {
   }
 }
 
-module.exports = {
+module.exports = app;
   sendSongEmail
 };
