@@ -6,7 +6,7 @@
 const nodemailer = require('nodemailer');
 
 // Configuration SMTP - Compatible Gmail ET Hostinger
-const transporter = nodemailer.createTransporter({
+const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT) || 465,
   secure: true,
