@@ -6,10 +6,9 @@ const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 
-const sunoService = require('../services/sunoService');
 const emailService = require('../services/emailService');
 
-// Stockage temporaire des commandes (en production, utiliser une base de donnees)
+// Stockage temporaire des commandes
 const orders = new Map();
 
 /**
@@ -65,6 +64,9 @@ router.post('/order', async (req, res) => {
 
     console.log('Nouvelle commande creee:', orderId);
 
+    // Envoyer email de confirmation
+    await emailService.sendOrderConfirmation(order);
+
     res.json({
       success: true,
       orderId,
@@ -89,28 +91,16 @@ router.post('/generate', async (req, res) => {
       return res.status(404).json({ error: 'Commande non trouvee' });
     }
 
-    // Generer les paroles
-    const lyrics = sunoService.generateLyrics(order.data);
-    
-    // Appeler l'API Suno
-    const result = await sunoService.createSong({
-      lyrics,
-      style: order.data.q8_style || ['pop'],
-      title: `Chanson pour ${order.data.q1_nom}`,
-      voice: order.data.q8_voix,
-      energy: order.data.q8_energie
-    });
-
-    // Mettre a jour la commande
-    order.status = 'generating';
-    order.sunoId = result.id;
+    // Pour l'instant, on simule la generation
+    // Quand tu auras la cle Suno, on connectera l'API reelle
+    order.status = 'processing';
     orders.set(orderId, order);
 
     res.json({
       success: true,
       message: 'Generation de la chanson lancee',
       orderId,
-      sunoId: result.id
+      note: 'Connexion a Suno API necessaire - ajoutez votre cle dans les variables d\'environnement'
     });
 
   } catch (error) {
@@ -131,61 +121,15 @@ router.get('/status/:orderId', async (req, res) => {
       return res.status(404).json({ error: 'Commande non trouvee' });
     }
 
-    // Si en cours, verifier l'etat chez Suno
-    if (order.status === 'generating' && order.sunoId) {
-      const status = await sunoService.checkStatus(order.sunoId);
-      
-      if (status.completed) {
-        order.status = 'completed';
-        order.audioUrl = status.audioUrl;
-        
-        // Envoyer l'email
-        await emailService.sendSongEmail(order);
-      }
-      
-      orders.set(orderId, order);
-    }
-
     res.json({
       orderId,
       status: order.status,
-      audioUrl: order.audioUrl || null,
       createdAt: order.createdAt
     });
 
   } catch (error) {
     console.error('Erreur statut:', error);
     res.status(500).json({ error: 'Erreur lors de la verification' });
-  }
-});
-
-/**
- * POST /api/webhook/suno - Webhook Suno (quand la chanson est prete)
- */
-router.post('/webhook/suno', async (req, res) => {
-  try {
-    const { sunoId, status, audioUrl } = req.body;
-    
-    // Trouver la commande correspondante
-    for (const [orderId, order] of orders) {
-      if (order.sunoId === sunoId) {
-        order.status = status === 'completed' ? 'completed' : 'failed';
-        order.audioUrl = audioUrl;
-        orders.set(orderId, order);
-        
-        if (status === 'completed') {
-          await emailService.sendSongEmail(order);
-        }
-        
-        break;
-      }
-    }
-    
-    res.json({ received: true });
-    
-  } catch (error) {
-    console.error('Erreur webhook:', error);
-    res.status(500).json({ error: 'Erreur webhook' });
   }
 });
 
