@@ -1,12 +1,12 @@
 /**
  * SERVICE SUNO API
  * Generation de musique via l'API Suno
+ * Placeholder - a completer avec votre cle API
  */
 
-const axios = require('axios');
+// const axios = require('axios'); // Decommenter quand vous aurez la cle
 
 const SUNO_API_KEY = process.env.SUNO_API_KEY;
-const SUNO_API_URL = 'https://api.suno.ai/v1'; // URL a verifier selon la doc officielle
 
 /**
  * Generer les paroles a partir des reponses du questionnaire
@@ -24,7 +24,6 @@ function generateLyrics(data) {
 
   let lyrics = `[Verse 1]\n`;
   
-  // Intro avec le nom
   lyrics += `Pour ${q1_nom}, une chanson unique\n`;
   
   if (q2_description) {
@@ -37,7 +36,6 @@ function generateLyrics(data) {
   
   lyrics += `\n[Chorus]\n`;
   
-  // Message principal
   if (q5_message) {
     lyrics += `${q5_message}\n`;
   } else {
@@ -70,22 +68,22 @@ function generateLyrics(data) {
   
   lyrics += `Cette chanson est pour toi, ${q1_nom}\n`;
   
-  // Occasion
+  const occasions = {
+    'anniversaire': 'Joyeux Anniversaire',
+    'mariage': 'Vive les maries',
+    'amour': 'Notre amour est eternel',
+    'naissance': 'Bienvenue au monde',
+    'retraite': 'Bonne retraite',
+    'remerciement': 'Merci pour tout',
+    'hommage': 'En ta memoire',
+    'soutien': 'On est avec toi',
+    'demenagement': 'Bonne chance',
+    'rupture': 'Tu vas t en sortir',
+    'protesta': 'La lutte continue',
+    'autre': 'Ceci est pour toi'
+  };
+  
   if (q1_occasion) {
-    const occasions = {
-      'anniversaire': 'Joyeux Anniversaire',
-      'mariage': 'Vive les maries',
-      'amour': 'Notre amour est eternel',
-      'naissance': 'Bienvenue au monde',
-      'retraite': 'Bonne retraite',
-      'remerciement': 'Merci pour tout',
-      'hommage': 'En ta memoire',
-      'soutien': 'On est avec toi',
-      'demenagement': 'Bonne chance',
-      'rupture': 'Tu vas t en sortir',
-      'protesta': 'La lutte continue',
-      'autre': 'Ceci est pour toi'
-    };
     lyrics += `${occasions[q1_occasion] || 'C est pour toi'}\n`;
   }
   
@@ -94,58 +92,45 @@ function generateLyrics(data) {
 
 /**
  * Creer une chanson via l'API Suno
+ * Placeholder - a implementer avec l'API reelle
  */
-async function createSong({ lyrics, style, title, voice, energy }) {
-  try {
-    if (!SUNO_API_KEY || SUNO_API_KEY === 'YOUR_SUNO_API_KEY_HERE') {
-      throw new Error('CLE API SUNO NON CONFIGUREE');
-    }
-
-    const response = await axios.post(`${SUNO_API_URL}/generate`, {
-      prompt: lyrics,
-      style: style.join(', '),
-      title: title,
-      make_instrumental: false,
-      wait_audio: false
-    }, {
-      headers: {
-        'Authorization': `Bearer ${SUNO_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
+async function createSong({ lyrics, style, title }) {
+  // Verifier si la cle est configuree
+  if (!SUNO_API_KEY || SUNO_API_KEY === 'YOUR_SUNO_API_KEY_HERE' || SUNO_API_KEY === 'TEMPORAIRE') {
+    console.log('Suno API Key non configuree - simulation mode');
     return {
-      id: response.data.id,
-      status: 'pending'
+      id: 'SIMULATED_' + Date.now(),
+      status: 'simulated',
+      message: 'Mode simulation - ajoutez votre cle Suno API dans les variables d\'environnement'
     };
-
-  } catch (error) {
-    console.error('Erreur API Suno:', error.response?.data || error.message);
-    throw error;
   }
+
+  // TODO: Implementer l'appel reel a l'API Suno quand vous aurez la cle
+  // const response = await axios.post(...)
+  
+  return {
+    id: 'PENDING_' + Date.now(),
+    status: 'pending'
+  };
 }
 
 /**
  * Verifier le statut d'une generation
  */
 async function checkStatus(sunoId) {
-  try {
-    const response = await axios.get(`${SUNO_API_URL}/generate/${sunoId}`, {
-      headers: {
-        'Authorization': `Bearer ${SUNO_API_KEY}`
-      }
-    });
-
+  if (sunoId.startsWith('SIMULATED_')) {
     return {
-      completed: response.data.status === 'completed',
-      audioUrl: response.data.audio_url,
-      status: response.data.status
+      completed: false,
+      status: 'simulated',
+      audioUrl: null
     };
-
-  } catch (error) {
-    console.error('Erreur check status:', error.message);
-    throw error;
   }
+
+  return {
+    completed: false,
+    status: 'pending',
+    audioUrl: null
+  };
 }
 
 module.exports = {
