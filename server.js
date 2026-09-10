@@ -1,12 +1,11 @@
 /**
  * INSTASON BACKEND
- * Serveur Node.js pour la generation de chansons personnalisees
+ * Serveur Node.js pour la generation de chansons
  */
 
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 
 const apiRoutes = require('./routes/api');
 
@@ -16,13 +15,6 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-
-// Logging
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  next();
-});
 
 // Routes API
 app.use('/api', apiRoutes);
@@ -30,6 +22,15 @@ app.use('/api', apiRoutes);
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Page d'accueil
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'InstaSon Backend', 
+    status: 'running',
+    version: '1.0.0'
+  });
 });
 
 // Error handling
