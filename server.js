@@ -8,7 +8,7 @@ const express = require('express');
 const cors = require('cors');
 
 const apiRoutes = require('./routes/api');
-
+const emailRoutes = require('./services/emailService');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -18,6 +18,7 @@ app.use(express.json({ limit: '10mb' }));
 
 // Routes API
 app.use('/api', apiRoutes);
+app.use('/api/email', emailRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
